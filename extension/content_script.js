@@ -31,7 +31,22 @@ function updateHidden(e, key) {
   e.style.display = data.posts[key].hidden ? "none" : "";
 }
 
-function updatePlayers(playersDiv, key) {}
+function updatePlayers(playersDiv, key) {
+  Promise.resolve(data.posts[key].players)
+    .then((players) =>
+      players.map((p, i) => {
+        const d = document.createElement("div");
+        d.innerText = data.players[p].fullName;
+        d.onclick = () => {
+          data.posts[key].players.splice(i, 1);
+          updatePlayers(playersDiv, key);
+          chrome.storage.sync.set({ [key]: data.posts[key] });
+        };
+        return d;
+      })
+    )
+    .then((playerDivs) => playersDiv.replaceChildren(...playerDivs));
+}
 
 function run() {
   setInterval(main, 100);
@@ -72,8 +87,8 @@ function main() {
                 };
                 wrapper.appendChild(controls);
 
-                const players = document.createElement("div");
-                wrapper.appendChild(players);
+                const playersDiv = document.createElement("div");
+                wrapper.appendChild(playersDiv);
 
                 const boxdiv = document.createElement("div");
                 const box = document.createElement("input");
@@ -101,8 +116,8 @@ function main() {
                           d.onclick = () => {
                             boxplayers.replaceChildren();
                             box.value = "";
-                            data.posts[key].players[p.id] = true;
-                            updatePlayers(players, key);
+                            data.posts[key].players.push(p.id);
+                            updatePlayers(playersDiv, key);
                             chrome.storage.sync.set({ [key]: data.posts[key] });
                           };
                           return d;
@@ -113,9 +128,9 @@ function main() {
                     );
 
                 chrome.storage.sync.get([key], (result) => {
-                  data.posts[key] = result[key] || { players: {} };
+                  data.posts[key] = result[key] || { players: [] };
                   updateHidden(e, key);
-                  updatePlayers(players, key);
+                  updatePlayers(playersDiv, key);
                 });
                 wrapper.appendChild(e);
                 return e;
