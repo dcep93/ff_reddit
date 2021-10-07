@@ -35,7 +35,8 @@ function updatePlayers(playersDiv, key, redditId) {
     .then((players) =>
       players.map((p) => {
         const playerId = `p_${p}`;
-        const d = document.createElement("div");
+        const d = document.createElement("span");
+        d.style.paddingRight = "10px";
         d.innerText = data.players[p].n;
         chrome.storage.sync.get([playerId], (result) => {
           d.title = Object.keys(result[playerId]);
@@ -84,7 +85,10 @@ function main() {
                 const wrapper = document.createElement("div");
                 table.replaceChild(wrapper, e);
 
-                const controls = document.createElement("div");
+                const playersDiv = document.createElement("div");
+                wrapper.appendChild(playersDiv);
+
+                const controls = document.createElement("span");
                 controls.innerText = `${
                   e.getElementsByClassName("comments")[0].innerText
                 } - ${key}`;
@@ -96,9 +100,6 @@ function main() {
                   chrome.storage.sync.set({ [key]: data.posts[key] });
                 };
                 wrapper.appendChild(controls);
-
-                const playersDiv = document.createElement("div");
-                wrapper.appendChild(playersDiv);
 
                 const boxdiv = document.createElement("div");
                 const box = document.createElement("input");
