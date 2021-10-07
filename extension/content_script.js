@@ -34,12 +34,15 @@ function updatePlayers(playersDiv, key, redditId) {
     .then(Object.keys)
     .then((players) =>
       players.map((p) => {
+        const playerId = `p_${p}`;
         const d = document.createElement("div");
         d.innerText = data.players[p].n;
+        chrome.storage.sync.get([playerId], (result) => {
+          d.title = Object.keys(result[playerId]);
+        });
         d.onclick = () => {
           delete data.posts[key].players[p];
           updatePlayers(playersDiv, key, redditId);
-          const playerId = `p_${p}`;
           chrome.storage.sync.get([playerId], (result) => {
             const redditIds = result.playerId || {};
             delete redditIds[redditId];
