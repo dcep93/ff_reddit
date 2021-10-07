@@ -34,7 +34,7 @@ function updatePlayers(playersDiv, key) {
     .then((players) =>
       players.map((p, i) => {
         const d = document.createElement("div");
-        d.innerText = data.players[p].fullName;
+        d.innerText = data.players[p].n;
         d.onclick = () => {
           data.posts[key].players.splice(i, 1);
           updatePlayers(playersDiv, key);
@@ -99,17 +99,13 @@ function main() {
                     .then((players) =>
                       players
                         .filter((p) =>
-                          p.fullName
-                            .toLowerCase()
-                            .includes(box.value.toLowerCase())
+                          p.n.toLowerCase().includes(box.value.toLowerCase())
                         )
-                        .sort((a, b) => b.ownership - a.ownership)
+                        .sort((a, b) => b.o - a.o)
                         .slice(0, 10)
                         .map((p) => {
                           const d = document.createElement("div");
-                          d.innerText = `${p.ownership.toFixed(2)} ${
-                            p.fullName
-                          }`;
+                          d.innerText = `${p.o.toFixed(2)} ${p.n}`;
                           d.onclick = () => {
                             boxplayers.replaceChildren();
                             box.value = "";
@@ -153,6 +149,7 @@ function loadPlayers() {
         fetchPlayers()
           .then((players) => {
             const playersW = { players, timestamp };
+            console.log(JSON.stringify(playersW).length);
             chrome.storage.sync.set({ playersW });
             return players;
           })
@@ -176,9 +173,9 @@ function fetchPlayers() {
       resp.map(({ fullName, id, ownership }) => [
         id,
         {
-          fullName,
+          n: fullName,
           id,
-          ownership: ownership.percentOwned,
+          o: ownership.percentOwned,
         },
       ])
     )
