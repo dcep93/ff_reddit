@@ -43,9 +43,10 @@ function updatePlayers(playersDiv, key, redditId) {
           chrome.storage.sync.get([playerId], (result) => {
             const redditIds = result.playerId || {};
             delete redditIds[redditId];
+            console.log(`removing ${playerId} from ${redditId}`);
             chrome.storage.sync.set({ [playerId]: redditIds });
+            chrome.storage.sync.set({ [key]: data.posts[key] });
           });
-          chrome.storage.sync.set({ [key]: data.posts[key] });
         };
         return d;
       })
@@ -88,6 +89,7 @@ function main() {
                 controls.onclick = () => {
                   data.posts[key].hidden = !data.posts[key].hidden;
                   updateHidden(e, key);
+                  console.log(`toggling ${key} ${data.posts[key].hidden}`);
                   chrome.storage.sync.set({ [key]: data.posts[key] });
                 };
                 wrapper.appendChild(controls);
@@ -123,11 +125,14 @@ function main() {
                             chrome.storage.sync.get([playerId], (result) => {
                               const redditIds = result.playerId || {};
                               redditIds[redditId] = true;
+                              console.log(`saving ${playerId} to ${redditId}`);
                               chrome.storage.sync.set({
                                 [playerId]: redditIds,
                               });
+                              chrome.storage.sync.set({
+                                [key]: data.posts[key],
+                              });
                             });
-                            chrome.storage.sync.set({ [key]: data.posts[key] });
                           };
                           return d;
                         })
