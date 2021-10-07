@@ -29,7 +29,7 @@ function updateHidden(e, key) {
   e.style.display = data.posts[key].hidden ? "none" : "";
 }
 
-function updatePlayers(playersDiv, key, postId) {
+function updatePlayers(playersDiv, key, redditId) {
   Promise.resolve(data.posts[key].players)
     .then(Object.keys)
     .then((players) =>
@@ -38,7 +38,13 @@ function updatePlayers(playersDiv, key, postId) {
         d.innerText = data.players[p].n;
         d.onclick = () => {
           delete data.posts[key].players[p];
-          updatePlayers(playersDiv, key, postId);
+          updatePlayers(playersDiv, key, redditId);
+          const playerId = `p_${p}`;
+          chrome.storage.sync.get([playerId], (result) => {
+            const redditIds = result.playerId || {};
+            delete redditIds[redditId];
+            chrome.storage.sync.set({ [playerId]: redditIds });
+          });
           chrome.storage.sync.set({ [key]: data.posts[key] });
         };
         return d;
@@ -68,8 +74,8 @@ function main() {
                   table.removeChild(e);
                   return e;
                 }
-                const postId = e.getAttribute("data-fullname");
-                const key = `r_${postId}`;
+                const redditId = e.getAttribute("data-fullname");
+                const key = `r_${redditId}`;
 
                 const wrapper = document.createElement("div");
                 table.replaceChild(wrapper, e);
@@ -112,7 +118,15 @@ function main() {
                             boxplayers.replaceChildren();
                             box.value = "";
                             data.posts[key].players[p.id] = true;
-                            updatePlayers(playersDiv, key, postId);
+                            updatePlayers(playersDiv, key, redditId);
+                            const playerId = `p_${p.id}`;
+                            chrome.storage.sync.get([playerId], (result) => {
+                              const redditIds = result.playerId || {};
+                              redditIds[redditId] = true;
+                              chrome.storage.sync.set({
+                                [playerId]: redditIds,
+                              });
+                            });
                             chrome.storage.sync.set({ [key]: data.posts[key] });
                           };
                           return d;
@@ -125,7 +139,7 @@ function main() {
                 chrome.storage.sync.get([key], (result) => {
                   data.posts[key] = result[key] || { players: {} };
                   updateHidden(e, key);
-                  updatePlayers(playersDiv, key, postId);
+                  updatePlayers(playersDiv, key, redditId);
                 });
                 wrapper.appendChild(e);
                 return e;
