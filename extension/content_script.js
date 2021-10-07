@@ -1,3 +1,5 @@
+const year = 2021;
+
 console.log("content_script", location.href);
 const start = new Date().getTime();
 
@@ -6,12 +8,30 @@ function log(arg) {
   return arg;
 }
 
-function hide(e, key, hidden) {
-  data[key] = hidden;
-  e.style.display = hidden ? "none" : "";
+function init() {
+  loadPlayers();
+  chrome.storage.sync.get(["year"], (result) => {
+    if (result.year !== year) {
+      chrome.storage.sync.clear(() =>
+        chrome.storage.sync.set({ year }, () => {
+          run();
+        })
+      );
+    } else {
+      run();
+    }
+  });
 }
 
-const data = {};
+const data = { posts: {} };
+
+function updateHidden(e, key) {
+  e.style.display = data.posts[key].hidden ? "none" : "";
+}
+
+function run() {
+  setInterval(main, 100);
+}
 
 function main() {
   Promise.resolve()
@@ -39,13 +59,15 @@ function main() {
                 } - ${key}`;
                 controls.title = e.querySelector("a.title").innerText;
                 controls.onclick = () => {
-                  hide(e, key, !data[key]);
-                  chrome.storage.sync.set({ [key]: data[key] });
+                  data.posts[key].hidden = !data.posts[key].hidden;
+                  updateHidden(e, key);
+                  chrome.storage.sync.set({ [key]: data.posts[key] });
                 };
                 wrapper.appendChild(controls);
-                chrome.storage.sync.get([key], (result) =>
-                  hide(e, key, result[key])
-                );
+                chrome.storage.sync.get([key], (result) => {
+                  data.posts[key] = result[key] || {};
+                  updateHidden(e, key);
+                });
                 wrapper.appendChild(e);
                 return e;
               })
@@ -57,4 +79,25 @@ function main() {
     .then((es) => es.length && log(es));
 }
 
-setInterval(main, 100);
+function loadPlayers() {
+  fetch(
+    "https://fantasy.espn.com/apis/v3/games/ffl/seasons/2021/players?scoringPeriodId=0&view=players_wl",
+    {
+      headers: {
+        "x-fantasy-filter": '{"filterActive":{"value":true}}',
+      },
+    }
+  )
+    .then((resp) => resp.json())
+    .then(log)
+    .then((resp) =>
+      resp.map(({ fullName, id, ownership }) => ({
+        fullName,
+        id,
+        ownership: ownership.percentOwned,
+      }))
+    )
+    .then((players) => (data.players = players));
+}
+
+init();

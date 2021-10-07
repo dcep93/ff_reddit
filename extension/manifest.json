@@ -3,7 +3,7 @@
   "description": "On reddit, adds a button to hide old news and to tag posts with a player. On ESPN fantasy, shows all posts tagged with that player.",
   "version": "0.0.1",
   "permissions": ["tabs", "storage"],
-  "host_permissions": ["https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/**"],
+  "host_permissions": ["https://fantasy.espn.com/apis/v3/games/ffl/seasons/**"],
   "icons": {
     "16": "favicon.png",
     "48": "favicon.png",
