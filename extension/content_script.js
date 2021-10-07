@@ -6,6 +6,13 @@ function log(arg) {
   return arg;
 }
 
+function hide(e, key, hidden) {
+  data[key] = hidden;
+  e.style.display = hidden ? "none" : "";
+}
+
+const data = {};
+
 function main() {
   Promise.resolve()
     .then(() => document.getElementsByClassName("sitetable"))
@@ -19,12 +26,26 @@ function main() {
             children
               .filter((e) => e.classList.contains("thing"))
               .map((e) => {
+                if (e.classList.contains("promoted")) {
+                  table.removeChild(e);
+                  return e;
+                }
                 const wrapper = document.createElement("div");
                 table.replaceChild(wrapper, e);
                 const controls = document.createElement("div");
-                controls.innerText = e.getAttribute("data-fullname");
+                const key = `r_${e.getAttribute("data-fullname")}`;
+                controls.innerText = `${
+                  e.getElementsByClassName("comments")[0].innerText
+                } - ${key}`;
+                controls.title = e.querySelector("a.title").innerText;
+                controls.onclick = () => {
+                  hide(e, key, !data[key]);
+                  chrome.storage.sync.set({ [key]: data[key] });
+                };
                 wrapper.appendChild(controls);
-                e.style.display = "none";
+                chrome.storage.sync.get([key], (result) =>
+                  hide(e, key, result[key])
+                );
                 wrapper.appendChild(e);
                 return e;
               })
@@ -33,8 +54,7 @@ function main() {
     )
     .then((promises) => Promise.all(promises))
     .then((arrs) => arrs.flatMap((i) => i))
-    .then(log);
+    .then((es) => es.length && log(es));
 }
 
-main();
-setInterval(main, 1000);
+setInterval(main, 100);
