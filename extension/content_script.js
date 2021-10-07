@@ -29,15 +29,16 @@ function updateHidden(e, key) {
   e.style.display = data.posts[key].hidden ? "none" : "";
 }
 
-function updatePlayers(playersDiv, key) {
+function updatePlayers(playersDiv, key, postId) {
   Promise.resolve(data.posts[key].players)
+    .then(Object.keys)
     .then((players) =>
-      players.map((p, i) => {
+      players.map((p) => {
         const d = document.createElement("div");
         d.innerText = data.players[p].n;
         d.onclick = () => {
-          data.posts[key].players.splice(i, 1);
-          updatePlayers(playersDiv, key);
+          delete data.posts[key].players[p];
+          updatePlayers(playersDiv, key, postId);
           chrome.storage.sync.set({ [key]: data.posts[key] });
         };
         return d;
@@ -67,7 +68,8 @@ function main() {
                   table.removeChild(e);
                   return e;
                 }
-                const key = `r_${e.getAttribute("data-fullname")}`;
+                const postId = e.getAttribute("data-fullname");
+                const key = `r_${postId}`;
 
                 const wrapper = document.createElement("div");
                 table.replaceChild(wrapper, e);
@@ -109,8 +111,8 @@ function main() {
                           d.onclick = () => {
                             boxplayers.replaceChildren();
                             box.value = "";
-                            data.posts[key].players.push(p.id);
-                            updatePlayers(playersDiv, key);
+                            data.posts[key].players[p.id] = true;
+                            updatePlayers(playersDiv, key, postId);
                             chrome.storage.sync.set({ [key]: data.posts[key] });
                           };
                           return d;
@@ -121,9 +123,9 @@ function main() {
                     );
 
                 chrome.storage.sync.get([key], (result) => {
-                  data.posts[key] = result[key] || { players: [] };
+                  data.posts[key] = result[key] || { players: {} };
                   updateHidden(e, key);
-                  updatePlayers(playersDiv, key);
+                  updatePlayers(playersDiv, key, postId);
                 });
                 wrapper.appendChild(e);
                 return e;
@@ -139,7 +141,7 @@ function main() {
 function loadPlayers() {
   const timestamp = new Date().getTime();
   return new Promise((resolve, reject) =>
-    chrome.storage.sync.get(["playersW"], (result) => {
+    chrome.storage.local.get(["playersW"], (result) => {
       if (
         result.playersW &&
         result.playersW.timestamp > timestamp - 6 * 60 * 60 * 1000
@@ -149,8 +151,7 @@ function loadPlayers() {
         fetchPlayers()
           .then((players) => {
             const playersW = { players, timestamp };
-            console.log(JSON.stringify(playersW).length);
-            chrome.storage.sync.set({ playersW });
+            chrome.storage.local.set({ playersW });
             return players;
           })
           .then(resolve);
