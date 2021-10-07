@@ -50,20 +50,29 @@ function main() {
                   table.removeChild(e);
                   return e;
                 }
+                const key = `r_${e.getAttribute("data-fullname")}`;
+
                 const wrapper = document.createElement("div");
                 table.replaceChild(wrapper, e);
+
                 const controls = document.createElement("div");
-                const key = `r_${e.getAttribute("data-fullname")}`;
                 controls.innerText = `${
                   e.getElementsByClassName("comments")[0].innerText
                 } - ${key}`;
                 controls.title = e.querySelector("a.title").innerText;
                 controls.onclick = () => {
                   data.posts[key].hidden = !data.posts[key].hidden;
+                  console.log("click", key, data.posts[key]);
                   updateHidden(e, key);
                   chrome.storage.sync.set({ [key]: data.posts[key] });
                 };
                 wrapper.appendChild(controls);
+
+                const players = document.createElement("div");
+                const box = document.createElement("input");
+                e.appendChild(box);
+                wrapper.appendChild(players);
+
                 chrome.storage.sync.get([key], (result) => {
                   data.posts[key] = result[key] || {};
                   updateHidden(e, key);
@@ -91,12 +100,16 @@ function loadPlayers() {
     .then((resp) => resp.json())
     .then(log)
     .then((resp) =>
-      resp.map(({ fullName, id, ownership }) => ({
-        fullName,
+      resp.map(({ fullName, id, ownership }) => [
         id,
-        ownership: ownership.percentOwned,
-      }))
+        {
+          fullName,
+          id,
+          ownership: ownership.percentOwned,
+        },
+      ])
     )
+    .then(Object.fromEntries)
     .then((players) => (data.players = players));
 }
 
