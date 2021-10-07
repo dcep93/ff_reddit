@@ -44,7 +44,7 @@ function updatePlayers(playersDiv, key, redditId) {
           delete data.posts[key].players[p];
           updatePlayers(playersDiv, key, redditId);
           chrome.storage.sync.get([playerId], (result) => {
-            const redditIds = result.playerId || {};
+            const redditIds = result[playerId] || {};
             delete redditIds[redditId];
             console.log(`removing ${playerId} from ${redditId}`);
             chrome.storage.sync.set({ [playerId]: redditIds });
@@ -126,7 +126,7 @@ function main() {
                             updatePlayers(playersDiv, key, redditId);
                             const playerId = `p_${p.id}`;
                             chrome.storage.sync.get([playerId], (result) => {
-                              const redditIds = result.playerId || {};
+                              const redditIds = result[playerId] || {};
                               redditIds[redditId] = true;
                               console.log(`saving ${playerId} to ${redditId}`);
                               chrome.storage.sync.set({
