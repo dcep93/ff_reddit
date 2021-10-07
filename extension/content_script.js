@@ -9,20 +9,18 @@ function log(arg) {
 }
 
 function init() {
-  loadPlayers().then(() =>
-    chrome.storage.sync.get(["version"], (result) => {
-      if (result.version !== version) {
-        console.log("clearing");
-        chrome.storage.sync.clear(() =>
-          chrome.storage.sync.set({ version }, () => {
-            run();
-          })
-        );
-      } else {
-        run();
-      }
-    })
-  );
+  chrome.storage.sync.get(["version"], (result) => {
+    if (result.version !== version) {
+      console.log("clearing");
+      chrome.storage.sync.clear(() =>
+        chrome.storage.sync.set({ version }, () => {
+          run();
+        })
+      );
+    } else {
+      run();
+    }
+  });
 }
 
 const data = { posts: {}, players: {} };
@@ -49,7 +47,7 @@ function updatePlayers(playersDiv, key) {
 }
 
 function run() {
-  setInterval(main, 100);
+  loadPlayers().then(() => setInterval(main, 100));
 }
 
 function main() {
@@ -81,7 +79,6 @@ function main() {
                 controls.title = e.querySelector("a.title").innerText;
                 controls.onclick = () => {
                   data.posts[key].hidden = !data.posts[key].hidden;
-                  console.log("click", key, data.posts[key]);
                   updateHidden(e, key);
                   chrome.storage.sync.set({ [key]: data.posts[key] });
                 };
@@ -144,6 +141,28 @@ function main() {
 }
 
 function loadPlayers() {
+  const timestamp = new Date().getTime();
+  return new Promise((resolve, reject) =>
+    chrome.storage.sync.get(["playersW"], (result) => {
+      if (
+        result.playersW &&
+        result.playersW.timestamp > timestamp - 6 * 60 * 60 * 1000
+      ) {
+        resolve(result.playersW.players);
+      } else {
+        fetchPlayers()
+          .then((players) => {
+            const playersW = { players, timestamp };
+            chrome.storage.sync.set({ playersW });
+            return players;
+          })
+          .then(resolve);
+      }
+    })
+  ).then((players) => (data.players = players));
+}
+
+function fetchPlayers() {
   return fetch(
     "https://fantasy.espn.com/apis/v3/games/ffl/seasons/2021/players?scoringPeriodId=0&view=players_wl",
     {
@@ -153,7 +172,6 @@ function loadPlayers() {
     }
   )
     .then((resp) => resp.json())
-    .then(log)
     .then((resp) =>
       resp.map(({ fullName, id, ownership }) => [
         id,
@@ -164,8 +182,7 @@ function loadPlayers() {
         },
       ])
     )
-    .then(Object.fromEntries)
-    .then((players) => (data.players = players));
+    .then(Object.fromEntries);
 }
 
 init();
