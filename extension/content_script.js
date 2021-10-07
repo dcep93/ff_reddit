@@ -1,4 +1,4 @@
-const year = 2021;
+const version = "2021";
 
 console.log("content_script", location.href);
 const start = new Date().getTime();
@@ -9,25 +9,29 @@ function log(arg) {
 }
 
 function init() {
-  loadPlayers();
-  chrome.storage.sync.get(["year"], (result) => {
-    if (result.year !== year) {
-      chrome.storage.sync.clear(() =>
-        chrome.storage.sync.set({ year }, () => {
-          run();
-        })
-      );
-    } else {
-      run();
-    }
-  });
+  loadPlayers().then(() =>
+    chrome.storage.sync.get(["version"], (result) => {
+      if (result.version !== version) {
+        console.log("clearing");
+        chrome.storage.sync.clear(() =>
+          chrome.storage.sync.set({ version }, () => {
+            run();
+          })
+        );
+      } else {
+        run();
+      }
+    })
+  );
 }
 
-const data = { posts: {} };
+const data = { posts: {}, players: {} };
 
 function updateHidden(e, key) {
   e.style.display = data.posts[key].hidden ? "none" : "";
 }
+
+function updatePlayers(playersDiv, key) {}
 
 function run() {
   setInterval(main, 100);
@@ -69,13 +73,49 @@ function main() {
                 wrapper.appendChild(controls);
 
                 const players = document.createElement("div");
-                const box = document.createElement("input");
-                e.appendChild(box);
                 wrapper.appendChild(players);
 
+                const boxdiv = document.createElement("div");
+                const box = document.createElement("input");
+                const boxplayers = document.createElement("div");
+                e.appendChild(boxdiv);
+                boxdiv.appendChild(box);
+                boxdiv.appendChild(boxplayers);
+                box.onkeyup = () =>
+                  Promise.resolve(data.players)
+                    .then(Object.values)
+                    .then((players) =>
+                      players
+                        .filter((p) =>
+                          p.fullName
+                            .toLowerCase()
+                            .includes(box.value.toLowerCase())
+                        )
+                        .sort((a, b) => b.ownership - a.ownership)
+                        .slice(0, 10)
+                        .map((p) => {
+                          const d = document.createElement("div");
+                          d.innerText = `${p.ownership.toFixed(2)} ${
+                            p.fullName
+                          }`;
+                          d.onclick = () => {
+                            boxplayers.replaceChildren();
+                            box.value = "";
+                            data.posts[key].players[p.id] = true;
+                            updatePlayers(players, key);
+                            chrome.storage.sync.set({ [key]: data.posts[key] });
+                          };
+                          return d;
+                        })
+                    )
+                    .then((playerDivs) =>
+                      boxplayers.replaceChildren(...playerDivs)
+                    );
+
                 chrome.storage.sync.get([key], (result) => {
-                  data.posts[key] = result[key] || {};
+                  data.posts[key] = result[key] || { players: {} };
                   updateHidden(e, key);
+                  updatePlayers(players, key);
                 });
                 wrapper.appendChild(e);
                 return e;
@@ -89,7 +129,7 @@ function main() {
 }
 
 function loadPlayers() {
-  fetch(
+  return fetch(
     "https://fantasy.espn.com/apis/v3/games/ffl/seasons/2021/players?scoringPeriodId=0&view=players_wl",
     {
       headers: {
