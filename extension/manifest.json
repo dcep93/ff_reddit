@@ -1,0 +1,23 @@
+{
+  "name": "FF Reddit",
+  "description": "On reddit, adds a button to hide old news and to tag posts with a player. On ESPN fantasy, shows all posts tagged with that player.",
+  "version": "0.0.1",
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/**"],
+  "icons": {
+    "16": "favicon.png",
+    "48": "favicon.png",
+    "128": "favicon.png"
+  },
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [
+    {
+      "matches": ["https://www.reddit.com/r/fantasyfootball/**"],
+      "js": ["content_script.js"]
+    }
+  ],
+  "action": {
+    "default_icon": "favicon.png"
+  },
+  "manifest_version": 3
+}
