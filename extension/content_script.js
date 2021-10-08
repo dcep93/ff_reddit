@@ -157,7 +157,9 @@ function main() {
                     Promise.resolve(data.players)
                       .then(Object.values)
                       .then((players) =>
-                        players.filter((p) => controls.title.includes(p.n))
+                        players.filter((p) =>
+                          e.querySelector("a.title").innerText.includes(p.n)
+                        )
                       )
                       .then((players) => {
                         players.length &&
