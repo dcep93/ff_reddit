@@ -135,13 +135,8 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
-  const boxdiv = document.createElement("div");
-  const box = document.createElement("input");
-  const boxplayers = document.createElement("span");
+  boxdiv = getBoxDiv();
   e.appendChild(boxdiv);
-  boxdiv.appendChild(box);
-  boxdiv.appendChild(boxplayers);
-  box.onkeyup = () => filterBox(box, boxplayers, key, redditId);
 
   chrome.storage.sync.get([key], (result) => {
     if (!result[key]) {
@@ -157,39 +152,46 @@ function transformPost(e, table) {
   return e;
 }
 
-function filterBox(box, boxplayers, key, redditId) {
-  Promise.resolve(data.players)
-    .then(Object.values)
-    .then((players) =>
-      players
-        .filter((p) => clean(p.n).includes(clean(box.value)))
-        .sort((a, b) => b.o - a.o)
-        .slice(0, 10)
-        .map((p) => {
-          const d = document.createElement("div");
-          d.innerText = `${p.o.toFixed(2)} ${p.n}`;
-          d.onclick = () => {
-            boxplayers.replaceChildren();
-            box.value = "";
-            data.posts[key].players[p.id] = new Date().getTime();
-            updatePlayers(playersDiv, key, redditId);
-            const playerId = `p_${p.id}`;
-            chrome.storage.sync.get([playerId], (result) => {
-              const redditIds = result[playerId] || {};
-              redditIds[redditId] = new Date().getTime();
-              console.log(`saving ${playerId} to ${redditId}`);
-              chrome.storage.sync.set({
-                [playerId]: redditIds,
+function getBoxDiv() {
+  const boxdiv = document.createElement("div");
+  const box = document.createElement("input");
+  const boxplayers = document.createElement("span");
+  boxdiv.appendChild(box);
+  boxdiv.appendChild(boxplayers);
+  box.onkeyup = () =>
+    Promise.resolve(data.players)
+      .then(Object.values)
+      .then((players) =>
+        players
+          .filter((p) => clean(p.n).includes(clean(box.value)))
+          .sort((a, b) => b.o - a.o)
+          .slice(0, 10)
+          .map((p) => {
+            const d = document.createElement("div");
+            d.innerText = `${p.o.toFixed(2)} ${p.n}`;
+            d.onclick = () => {
+              boxplayers.replaceChildren();
+              box.value = "";
+              data.posts[key].players[p.id] = new Date().getTime();
+              updatePlayers(playersDiv, key, redditId);
+              const playerId = `p_${p.id}`;
+              chrome.storage.sync.get([playerId], (result) => {
+                const redditIds = result[playerId] || {};
+                redditIds[redditId] = new Date().getTime();
+                console.log(`saving ${playerId} to ${redditId}`);
+                chrome.storage.sync.set({
+                  [playerId]: redditIds,
+                });
+                chrome.storage.sync.set({
+                  [key]: data.posts[key],
+                });
               });
-              chrome.storage.sync.set({
-                [key]: data.posts[key],
-              });
-            });
-          };
-          return d;
-        })
-    )
-    .then((playerDivs) => boxplayers.replaceChildren(...playerDivs));
+            };
+            return d;
+          })
+      )
+      .then((playerDivs) => boxplayers.replaceChildren(...playerDivs));
+  return boxdiv;
 }
 
 function read(postTitle, redditId, key, playersDiv) {
