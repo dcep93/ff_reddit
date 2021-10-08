@@ -20,7 +20,7 @@ const data = { posts: {}, players: {} };
 
 function init() {
   chrome.storage.sync.get(["version"], (result) => {
-    if (result.version !== version) {
+    if (true || result.version !== version) {
       console.log("clearing");
       chrome.storage.sync.clear(() =>
         chrome.storage.sync.set({ version }, () => {
@@ -223,19 +223,24 @@ function read(postTitle, redditId, key, playersDiv, e) {
     );
 }
 
-function seriallyUpdate() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get([playerId], (result) => {
-      const redditIds = result[playerId] || {};
-      redditIds[redditId] = new Date().getTime();
-      chrome.storage.sync.set(
-        {
-          [playerId]: redditIds,
-        },
-        resolve
-      );
-    });
-  });
+const promises = [Promise.resolve()];
+function seriallyUpdate(playerId, redditId) {
+  const p = new Promise((resolve, reject) =>
+    promises.splice(0, 1, p)[0].then(() => {
+      console.log("starting", playerId, redditId);
+      chrome.storage.sync.get([playerId], (result) => {
+        const redditIds = result[playerId] || {};
+        redditIds[redditId] = new Date().getTime();
+        chrome.storage.sync.set(
+          {
+            [playerId]: redditIds,
+          },
+          resolve
+        );
+      });
+    })
+  );
+  return p;
 }
 
 function loadPlayers() {
