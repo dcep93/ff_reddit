@@ -40,7 +40,7 @@ function run() {
 function clean(str) {
   return str
     .toLowerCase()
-    .replaceAll(/\bcmc\b/, "christian mccaffrey")
+    .replaceAll(/\bcmc\b/g, "christian mccaffrey")
     .replaceAll(/\./g, "");
 }
 
@@ -141,7 +141,7 @@ function transformPost(e, table) {
   chrome.storage.sync.get([key], (result) => {
     if (!result[key]) {
       const postTitle = e.querySelector("a.title").innerText;
-      read(postTitle, redditId, key, playersDiv);
+      read(postTitle, redditId, key, playersDiv, e);
     } else {
       data.posts[key] = result[key];
       updateHidden(e, key);
@@ -194,7 +194,7 @@ function getBoxDiv() {
   return boxdiv;
 }
 
-function read(postTitle, redditId, key, playersDiv) {
+function read(postTitle, redditId, key, playersDiv, e) {
   Promise.resolve(data.players)
     .then(Object.values)
     .then((players) =>
