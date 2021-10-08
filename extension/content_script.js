@@ -134,7 +134,7 @@ function main() {
                             const playerId = `p_${p.id}`;
                             chrome.storage.sync.get([playerId], (result) => {
                               const redditIds = result[playerId] || {};
-                              redditIds[redditId] = true;
+                              redditIds[redditId] = new Date().getTime();
                               console.log(`saving ${playerId} to ${redditId}`);
                               chrome.storage.sync.set({
                                 [playerId]: redditIds,
