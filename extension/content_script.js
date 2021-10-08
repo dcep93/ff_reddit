@@ -77,7 +77,8 @@ function main() {
               .filter(
                 (e) =>
                   e.classList.contains("thing") &&
-                  !e.classList.contains("comment")
+                  !e.classList.contains("comment") &&
+                  !e.classList.contains("morechildren")
               )
               .map((e) => {
                 if (e.classList.contains("promoted")) {
