@@ -26,7 +26,8 @@ function init() {
 const data = { posts: {}, players: {} };
 
 function updateHidden(e, key) {
-  e.style.display = data.posts[key].hidden ? "none" : "";
+  if (!location.href.contains("/comments/"))
+    e.style.display = data.posts[key].hidden ? "none" : "";
 }
 
 function updatePlayers(playersDiv, key, redditId) {
@@ -73,7 +74,11 @@ function main() {
           .then(Array.from)
           .then((children) =>
             children
-              .filter((e) => e.classList.contains("thing"))
+              .filter(
+                (e) =>
+                  e.classList.contains("thing") &&
+                  !e.classList.contains("comment")
+              )
               .map((e) => {
                 if (e.classList.contains("promoted")) {
                   table.removeChild(e);
