@@ -38,7 +38,7 @@ function updatePlayers(playersDiv, key, redditId) {
         const playerId = `p_${p}`;
         const d = document.createElement("span");
         d.style.paddingRight = "10px";
-        d.innerText = data.players[p].n;
+        d.innerText = `${data.players[p].n}/${data.players[p].o.toFixed(2)}`;
         chrome.storage.sync.get([playerId], (result) => {
           d.title = Object.keys(result[playerId]);
         });
@@ -89,6 +89,7 @@ function main() {
                 const key = `r_${redditId}`;
 
                 const wrapper = document.createElement("div");
+                wrapper.style.padding = "3px";
                 table.replaceChild(wrapper, e);
 
                 const playersDiv = document.createElement("div");
@@ -98,7 +99,6 @@ function main() {
                 controls.innerText = `${
                   e.getElementsByClassName("comments")[0].innerText
                 } - ${key}`;
-                controls.title = e.querySelector("a.title").innerText;
                 controls.onclick = () => {
                   data.posts[key].hidden = !data.posts[key].hidden;
                   updateHidden(e, key);
