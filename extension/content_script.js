@@ -63,6 +63,13 @@ function run() {
   loadPlayers().then(() => setInterval(main, 100));
 }
 
+function clean(str) {
+  return str
+    .toLowerCase()
+    .replaceAll(/\bcmc\b/, "christian mccaffrey")
+    .replaceAll(/\./g, "");
+}
+
 function main() {
   Promise.resolve()
     .then(() => document.getElementsByClassName("sitetable"))
@@ -118,9 +125,7 @@ function main() {
                     .then(Object.values)
                     .then((players) =>
                       players
-                        .filter((p) =>
-                          p.n.toLowerCase().includes(box.value.toLowerCase())
-                        )
+                        .filter((p) => clean(p.n).includes(clean(box.value)))
                         .sort((a, b) => b.o - a.o)
                         .slice(0, 10)
                         .map((p) => {
@@ -158,7 +163,9 @@ function main() {
                       .then(Object.values)
                       .then((players) =>
                         players.filter((p) =>
-                          e.querySelector("a.title").innerText.includes(p.n)
+                          clean(e.querySelector("a.title").innerText).includes(
+                            clean(p.n)
+                          )
                         )
                       )
                       .then((players) => {
