@@ -25,52 +25,52 @@ function init() {
 
 const data = { posts: {}, players: {} };
 
-function updateHidden(e, key) {
-  if (!location.href.includes("/comments/"))
-    e.style.display = data.posts[key].hidden ? "none" : "";
-}
-
-function updatePlayers(playersDiv, key, redditId) {
-  Promise.resolve(data.posts[key].players)
-    .then(Object.keys)
-    .then((players) =>
-      players.map((p) => {
-        const playerId = `p_${p}`;
-        const d = document.createElement("span");
-        d.style.paddingRight = "10px";
-        d.innerText = `${data.players[p].n}/${data.players[p].o.toFixed(2)}`;
-        chrome.storage.sync.get([playerId], (result) => {
-          d.title = Object.keys(result[playerId]);
-        });
-        d.onclick = () => {
-          delete data.posts[key].players[p];
-          updatePlayers(playersDiv, key, redditId);
-          chrome.storage.sync.get([playerId], (result) => {
-            const redditIds = result[playerId] || {};
-            delete redditIds[redditId];
-            console.log(`removing ${playerId} from ${redditId}`);
-            chrome.storage.sync.set({ [playerId]: redditIds });
-            chrome.storage.sync.set({ [key]: data.posts[key] });
-          });
-        };
-        return d;
-      })
-    )
-    .then((playerDivs) => playersDiv.replaceChildren(...playerDivs));
-}
-
 function run() {
   loadPlayers().then(() => setInterval(main, 100));
 }
 
-function clean(str) {
-  return str
-    .toLowerCase()
-    .replaceAll(/\bcmc\b/, "christian mccaffrey")
-    .replaceAll(/\./g, "");
-}
-
 function main() {
+  function clean(str) {
+    return str
+      .toLowerCase()
+      .replaceAll(/\bcmc\b/, "christian mccaffrey")
+      .replaceAll(/\./g, "");
+  }
+
+  function updateHidden(e, key) {
+    if (!location.href.includes("/comments/"))
+      e.style.display = data.posts[key].hidden ? "none" : "";
+  }
+
+  function updatePlayers(playersDiv, key, redditId) {
+    Promise.resolve(data.posts[key].players)
+      .then(Object.keys)
+      .then((players) =>
+        players.map((p) => {
+          const playerId = `p_${p}`;
+          const d = document.createElement("span");
+          d.style.paddingRight = "10px";
+          d.innerText = `${data.players[p].n}/${data.players[p].o.toFixed(2)}`;
+          chrome.storage.sync.get([playerId], (result) => {
+            d.title = Object.keys(result[playerId]);
+          });
+          d.onclick = () => {
+            delete data.posts[key].players[p];
+            updatePlayers(playersDiv, key, redditId);
+            chrome.storage.sync.get([playerId], (result) => {
+              const redditIds = result[playerId] || {};
+              delete redditIds[redditId];
+              console.log(`removing ${playerId} from ${redditId}`);
+              chrome.storage.sync.set({ [playerId]: redditIds });
+              chrome.storage.sync.set({ [key]: data.posts[key] });
+            });
+          };
+          return d;
+        })
+      )
+      .then((playerDivs) => playersDiv.replaceChildren(...playerDivs));
+  }
+
   Promise.resolve()
     .then(() => document.getElementsByClassName("sitetable"))
     .then(Array.from)
@@ -241,7 +241,28 @@ function loadPlayers() {
       ) {
         resolve(result.playersW.players);
       } else {
-        fetchPlayers()
+        console.log("fetching", result.playersW?.timestamp);
+
+        fetch(
+          "https://fantasy.espn.com/apis/v3/games/ffl/seasons/2021/players?scoringPeriodId=0&view=players_wl",
+          {
+            headers: {
+              "x-fantasy-filter": '{"filterActive":{"value":true}}',
+            },
+          }
+        )
+          .then((resp) => resp.json())
+          .then((resp) =>
+            resp.map(({ fullName, id, ownership }) => [
+              id,
+              {
+                n: fullName,
+                id,
+                o: ownership.percentOwned,
+              },
+            ])
+          )
+          .then(Object.fromEntries)
           .then((players) => {
             const playersW = { players, timestamp };
             chrome.storage.local.set({ playersW });
@@ -251,29 +272,6 @@ function loadPlayers() {
       }
     })
   ).then((players) => (data.players = players));
-}
-
-function fetchPlayers() {
-  return fetch(
-    "https://fantasy.espn.com/apis/v3/games/ffl/seasons/2021/players?scoringPeriodId=0&view=players_wl",
-    {
-      headers: {
-        "x-fantasy-filter": '{"filterActive":{"value":true}}',
-      },
-    }
-  )
-    .then((resp) => resp.json())
-    .then((resp) =>
-      resp.map(({ fullName, id, ownership }) => [
-        id,
-        {
-          n: fullName,
-          id,
-          o: ownership.percentOwned,
-        },
-      ])
-    )
-    .then(Object.fromEntries);
 }
 
 init();
