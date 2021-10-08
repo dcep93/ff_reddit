@@ -8,6 +8,16 @@ function log(arg) {
   return arg;
 }
 
+function main() {
+  if (location.href.startsWith("https://www.reddit.com")) {
+    transform();
+  } else {
+    inject();
+  }
+}
+
+const data = { posts: {}, players: {} };
+
 function init() {
   chrome.storage.sync.get(["version"], (result) => {
     if (result.version !== version) {
@@ -23,18 +33,8 @@ function init() {
   });
 }
 
-const data = { posts: {}, players: {} };
-
 function run() {
   loadPlayers().then(() => setInterval(main, 100));
-}
-
-function main() {
-  if (location.href.startsWith("https://www.reddit.com")) {
-    transform();
-  } else {
-    inject();
-  }
 }
 
 function clean(str) {
@@ -78,8 +78,6 @@ function updatePlayers(playersDiv, key, redditId) {
     .then((playerDivs) => playersDiv.replaceChildren(...playerDivs));
 }
 
-function inject() {}
-
 function transform() {
   Promise.resolve()
     .then(() => document.getElementsByClassName("sitetable"))
@@ -97,6 +95,14 @@ function transform() {
                   !e.classList.contains("comment") &&
                   !e.classList.contains("morechildren")
               )
+              .filter((e) => {
+                if (e.classList.contains("promoted")) {
+                  table.removeChild(e);
+                  return false;
+                } else {
+                  return true;
+                }
+              })
               .map((e) => transformPost(e, table))
           )
       )
@@ -107,10 +113,6 @@ function transform() {
 }
 
 function transformPost(e, table) {
-  if (e.classList.contains("promoted")) {
-    table.removeChild(e);
-    return e;
-  }
   const redditId = e.getAttribute("data-fullname");
   const key = `r_${redditId}`;
 
@@ -139,84 +141,12 @@ function transformPost(e, table) {
   e.appendChild(boxdiv);
   boxdiv.appendChild(box);
   boxdiv.appendChild(boxplayers);
-  box.onkeyup = () =>
-    Promise.resolve(data.players)
-      .then(Object.values)
-      .then((players) =>
-        players
-          .filter((p) => clean(p.n).includes(clean(box.value)))
-          .sort((a, b) => b.o - a.o)
-          .slice(0, 10)
-          .map((p) => {
-            const d = document.createElement("div");
-            d.innerText = `${p.o.toFixed(2)} ${p.n}`;
-            d.onclick = () => {
-              boxplayers.replaceChildren();
-              box.value = "";
-              data.posts[key].players[p.id] = new Date().getTime();
-              updatePlayers(playersDiv, key, redditId);
-              const playerId = `p_${p.id}`;
-              chrome.storage.sync.get([playerId], (result) => {
-                const redditIds = result[playerId] || {};
-                redditIds[redditId] = new Date().getTime();
-                console.log(`saving ${playerId} to ${redditId}`);
-                chrome.storage.sync.set({
-                  [playerId]: redditIds,
-                });
-                chrome.storage.sync.set({
-                  [key]: data.posts[key],
-                });
-              });
-            };
-            return d;
-          })
-      )
-      .then((playerDivs) => boxplayers.replaceChildren(...playerDivs));
+  box.onkeyup = () => filterBox(box, boxplayers, key, redditId);
 
   chrome.storage.sync.get([key], (result) => {
     if (!result[key]) {
-      Promise.resolve(data.players)
-        .then(Object.values)
-        .then((players) =>
-          players.filter((p) =>
-            clean(e.querySelector("a.title").innerText).includes(clean(p.n))
-          )
-        )
-        .then((players) => {
-          players.length &&
-            console.log(`reading ${players.map((p) => p.n)} to ${redditId}`);
-          return players;
-        })
-        .then((players) => players.map((p) => [p.id, new Date().getTime()]))
-        .then(Object.fromEntries)
-        .then((players) =>
-          chrome.storage.sync.set({ [key]: { players } }, () => {
-            data.posts[key] = { players };
-            updateHidden(e, key);
-            Promise.resolve(Object.keys(players))
-              .then((p) =>
-                p
-                  .map((p) => `p_${p}`)
-                  .map(
-                    (playerId) =>
-                      new Promise((resolve, reject) => {
-                        chrome.storage.sync.get([playerId], (result) => {
-                          const redditIds = result[playerId] || {};
-                          redditIds[redditId] = new Date().getTime();
-                          chrome.storage.sync.set(
-                            {
-                              [playerId]: redditIds,
-                            },
-                            resolve
-                          );
-                        });
-                      })
-                  )
-              )
-              .then((ps) => Promise.all(ps))
-              .then(() => updatePlayers(playersDiv, key, redditId));
-          })
-        );
+      const postTitle = e.querySelector("a.title").innerText;
+      read(postTitle, redditId, key, playersDiv);
     } else {
       data.posts[key] = result[key];
       updateHidden(e, key);
@@ -225,6 +155,84 @@ function transformPost(e, table) {
   });
   wrapper.appendChild(e);
   return e;
+}
+
+function filterBox(box, boxplayers, key, redditId) {
+  Promise.resolve(data.players)
+    .then(Object.values)
+    .then((players) =>
+      players
+        .filter((p) => clean(p.n).includes(clean(box.value)))
+        .sort((a, b) => b.o - a.o)
+        .slice(0, 10)
+        .map((p) => {
+          const d = document.createElement("div");
+          d.innerText = `${p.o.toFixed(2)} ${p.n}`;
+          d.onclick = () => {
+            boxplayers.replaceChildren();
+            box.value = "";
+            data.posts[key].players[p.id] = new Date().getTime();
+            updatePlayers(playersDiv, key, redditId);
+            const playerId = `p_${p.id}`;
+            chrome.storage.sync.get([playerId], (result) => {
+              const redditIds = result[playerId] || {};
+              redditIds[redditId] = new Date().getTime();
+              console.log(`saving ${playerId} to ${redditId}`);
+              chrome.storage.sync.set({
+                [playerId]: redditIds,
+              });
+              chrome.storage.sync.set({
+                [key]: data.posts[key],
+              });
+            });
+          };
+          return d;
+        })
+    )
+    .then((playerDivs) => boxplayers.replaceChildren(...playerDivs));
+}
+
+function read(postTitle, redditId, key, playersDiv) {
+  Promise.resolve(data.players)
+    .then(Object.values)
+    .then((players) =>
+      players.filter((p) => clean(postTitle).includes(clean(p.n)))
+    )
+    .then((players) => {
+      players.length &&
+        console.log(`reading ${players.map((p) => p.n)} to ${redditId}`);
+      return players;
+    })
+    .then((players) => players.map((p) => [p.id, new Date().getTime()]))
+    .then(Object.fromEntries)
+    .then((players) =>
+      chrome.storage.sync.set({ [key]: { players } }, () => {
+        data.posts[key] = { players };
+        updateHidden(e, key);
+        Promise.resolve(Object.keys(players))
+          .then((p) =>
+            p
+              .map((p) => `p_${p}`)
+              .map(
+                (playerId) =>
+                  new Promise((resolve, reject) => {
+                    chrome.storage.sync.get([playerId], (result) => {
+                      const redditIds = result[playerId] || {};
+                      redditIds[redditId] = new Date().getTime();
+                      chrome.storage.sync.set(
+                        {
+                          [playerId]: redditIds,
+                        },
+                        resolve
+                      );
+                    });
+                  })
+              )
+          )
+          .then((ps) => Promise.all(ps))
+          .then(() => updatePlayers(playersDiv, key, redditId));
+      })
+    );
 }
 
 function loadPlayers() {
@@ -269,5 +277,7 @@ function loadPlayers() {
     })
   ).then((players) => (data.players = players));
 }
+
+function inject() {}
 
 init();
