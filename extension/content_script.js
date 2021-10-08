@@ -129,7 +129,8 @@ function main() {
                           d.onclick = () => {
                             boxplayers.replaceChildren();
                             box.value = "";
-                            data.posts[key].players[p.id] = true;
+                            data.posts[key].players[p.id] =
+                              new Date().getTime();
                             updatePlayers(playersDiv, key, redditId);
                             const playerId = `p_${p.id}`;
                             chrome.storage.sync.get([playerId], (result) => {
@@ -152,9 +153,35 @@ function main() {
                     );
 
                 chrome.storage.sync.get([key], (result) => {
-                  data.posts[key] = result[key] || { players: {} };
-                  updateHidden(e, key);
-                  updatePlayers(playersDiv, key, redditId);
+                  if (!result[key]) {
+                    Promise.resolve(data.players)
+                      .then(Object.values)
+                      .then((players) =>
+                        players.filter((p) => controls.title.includes(p.n))
+                      )
+                      .then((players) => {
+                        players.length &&
+                          console.log(
+                            `reading ${players.map((p) => p.n)} to ${redditId}`
+                          );
+                        return players;
+                      })
+                      .then((players) =>
+                        players.map((p) => [p.id, new Date().getTime()])
+                      )
+                      .then(Object.fromEntries)
+                      .then((players) =>
+                        chrome.storage.sync.set({ [key]: { players } }, () => {
+                          data.posts[key] = { players };
+                          updateHidden(e, key);
+                          updatePlayers(playersDiv, key, redditId);
+                        })
+                      );
+                  } else {
+                    data.posts[key] = result[key];
+                    updateHidden(e, key);
+                    updatePlayers(playersDiv, key, redditId);
+                  }
                 });
                 wrapper.appendChild(e);
                 return e;
