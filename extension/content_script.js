@@ -108,7 +108,7 @@ function main() {
 
                 const boxdiv = document.createElement("div");
                 const box = document.createElement("input");
-                const boxplayers = document.createElement("div");
+                const boxplayers = document.createElement("span");
                 e.appendChild(boxdiv);
                 boxdiv.appendChild(box);
                 boxdiv.appendChild(boxplayers);
