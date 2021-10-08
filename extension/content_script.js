@@ -139,7 +139,7 @@ function transformPost(e, table) {
   e.appendChild(boxdiv);
 
   chrome.storage.sync.get([key], (result) => {
-    if (!result[key]) {
+    if (result[key] === undefined) {
       const postTitle = e.querySelector("a.title").innerText;
       read(postTitle, redditId, key, playersDiv, e);
     } else {
@@ -215,26 +215,27 @@ function read(postTitle, redditId, key, playersDiv, e) {
           .then((p) =>
             p
               .map((p) => `p_${p}`)
-              .map(
-                (playerId) =>
-                  new Promise((resolve, reject) => {
-                    chrome.storage.sync.get([playerId], (result) => {
-                      const redditIds = result[playerId] || {};
-                      redditIds[redditId] = new Date().getTime();
-                      chrome.storage.sync.set(
-                        {
-                          [playerId]: redditIds,
-                        },
-                        resolve
-                      );
-                    });
-                  })
-              )
+              .map((playerId) => seriallyUpdate(playerId, redditId))
           )
           .then((ps) => Promise.all(ps))
           .then(() => updatePlayers(playersDiv, key, redditId));
       })
     );
+}
+
+function seriallyUpdate() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get([playerId], (result) => {
+      const redditIds = result[playerId] || {};
+      redditIds[redditId] = new Date().getTime();
+      chrome.storage.sync.set(
+        {
+          [playerId]: redditIds,
+        },
+        resolve
+      );
+    });
+  });
 }
 
 function loadPlayers() {
