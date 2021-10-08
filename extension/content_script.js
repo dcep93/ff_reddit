@@ -174,7 +174,35 @@ function main() {
                         chrome.storage.sync.set({ [key]: { players } }, () => {
                           data.posts[key] = { players };
                           updateHidden(e, key);
-                          updatePlayers(playersDiv, key, redditId);
+                          Promise.resolve(Object.keys(players))
+                            .then((p) =>
+                              p
+                                .map((p) => `p_${p}`)
+                                .map(
+                                  (playerId) =>
+                                    new Promise((resolve, reject) => {
+                                      chrome.storage.sync.get(
+                                        [playerId],
+                                        (result) => {
+                                          const redditIds =
+                                            result[playerId] || {};
+                                          redditIds[redditId] =
+                                            new Date().getTime();
+                                          chrome.storage.sync.set(
+                                            {
+                                              [playerId]: redditIds,
+                                            },
+                                            resolve
+                                          );
+                                        }
+                                      );
+                                    })
+                                )
+                            )
+                            .then((ps) => Promise.all(ps))
+                            .then(() =>
+                              updatePlayers(playersDiv, key, redditId)
+                            );
                         })
                       );
                   } else {
