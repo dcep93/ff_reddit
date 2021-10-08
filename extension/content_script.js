@@ -26,7 +26,7 @@ function init() {
 const data = { posts: {}, players: {} };
 
 function updateHidden(e, key) {
-  if (!location.href.contains("/comments/"))
+  if (!location.href.includes("/comments/"))
     e.style.display = data.posts[key].hidden ? "none" : "";
 }
 
