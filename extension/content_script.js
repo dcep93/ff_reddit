@@ -135,13 +135,12 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
-  const title = "TODO";
-  boxdiv = getBoxDiv(key, playersDiv, redditId, title);
+  const postTitle = e.querySelector("a.title").innerText;
+  boxdiv = getBoxDiv(key, playersDiv, redditId, postTitle);
   e.appendChild(boxdiv);
 
   chrome.storage.sync.get([key], (result) => {
     if (result[key] === undefined) {
-      const postTitle = e.querySelector("a.title").innerText;
       read(postTitle, redditId, key, playersDiv, e);
     } else {
       data.posts[key] = result[key];
@@ -220,7 +219,7 @@ function read(postTitle, redditId, key, playersDiv, e) {
           .then((p) =>
             p
               .map((p) => `p_${p}`)
-              .map((playerId) => seriallyUpdate(playerId, redditId))
+              .map((playerId) => seriallyUpdate(playerId, redditId, postTitle))
           )
           .then((ps) => Promise.all(ps))
           .then(() => updatePlayers(playersDiv, key, redditId));
@@ -229,7 +228,7 @@ function read(postTitle, redditId, key, playersDiv, e) {
 }
 
 const promises = [Promise.resolve()];
-function seriallyUpdate(playerId, redditId) {
+function seriallyUpdate(playerId, redditId, title) {
   const x = {};
   function helper(x, resolve) {
     if (x.p === undefined) return setTimeout(() => helper(x, resolve), 10);
