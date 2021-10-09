@@ -14,6 +14,7 @@ function main() {
   } else {
     inject();
   }
+  setTimeout(main, 100);
 }
 
 const data = { posts: {}, players: {} };
@@ -34,7 +35,7 @@ function init() {
 }
 
 function run() {
-  loadPlayers().then(() => setInterval(main, 100));
+  loadPlayers().then(main);
 }
 
 function clean(str) {
