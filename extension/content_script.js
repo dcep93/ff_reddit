@@ -65,7 +65,7 @@ function updatePlayers(playersDiv, key, redditId) {
           delete data.posts[key].players[p];
           updatePlayers(playersDiv, key, redditId);
           chrome.storage.sync.get([playerId], (result) => {
-            const redditIds = result[playerId] || {};
+            const redditIds = result[playerId];
             delete redditIds[redditId];
             console.log(`removing ${playerId} from ${redditId}`);
             chrome.storage.sync.set({ [playerId]: redditIds });
@@ -135,7 +135,8 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
-  boxdiv = getBoxDiv(key, playersDiv, redditId);
+  const title = "TODO";
+  boxdiv = getBoxDiv(key, playersDiv, redditId, title);
   e.appendChild(boxdiv);
 
   chrome.storage.sync.get([key], (result) => {
@@ -152,7 +153,7 @@ function transformPost(e, table) {
   return e;
 }
 
-function getBoxDiv(key, playersDiv, redditId) {
+function getBoxDiv(key, playersDiv, redditId, title) {
   const boxdiv = document.createElement("div");
   const box = document.createElement("input");
   const boxplayers = document.createElement("span");
@@ -177,7 +178,11 @@ function getBoxDiv(key, playersDiv, redditId) {
               const playerId = `p_${p.id}`;
               chrome.storage.sync.get([playerId], (result) => {
                 const redditIds = result[playerId] || {};
-                redditIds[redditId] = new Date().getTime();
+                redditIds[redditId] = {
+                  redditId,
+                  title,
+                  timestamp: new Date().getTime(),
+                };
                 console.log(`saving ${playerId} to ${redditId}`);
                 chrome.storage.sync.set({
                   [playerId]: redditIds,
@@ -231,7 +236,12 @@ function seriallyUpdate(playerId, redditId) {
     promises.splice(0, 1, x.p)[0].then(() =>
       chrome.storage.sync.get([playerId], (result) => {
         const redditIds = result[playerId] || {};
-        redditIds[redditId] = new Date().getTime();
+        const title = "TODO";
+        redditIds[redditId] = {
+          redditId,
+          title,
+          timestamp: new Date().getTime(),
+        };
         chrome.storage.sync.set(
           {
             [playerId]: redditIds,
