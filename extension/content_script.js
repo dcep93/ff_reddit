@@ -135,7 +135,7 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
-  boxdiv = getBoxDiv();
+  boxdiv = getBoxDiv(key, playersDiv, redditId);
   e.appendChild(boxdiv);
 
   chrome.storage.sync.get([key], (result) => {
@@ -152,7 +152,7 @@ function transformPost(e, table) {
   return e;
 }
 
-function getBoxDiv() {
+function getBoxDiv(key, playersDiv, redditId) {
   const boxdiv = document.createElement("div");
   const box = document.createElement("input");
   const boxplayers = document.createElement("span");
@@ -288,6 +288,40 @@ function loadPlayers() {
   ).then((players) => (data.players = players));
 }
 
-function inject() {}
+function inject() {
+  const playerCard = document.getElementsByClassName("player-card-center")[0];
+  if (!playerCard) return;
+  var div = playerCard.getElementsByClassName("extension_div")[0];
+  if (!div) {
+    div = document.createElement("pre");
+    div.classList = ["extension_div"];
+    playerCard.appendChild(div);
+  }
+  Promise.resolve(playerCard.getElementsByTagName("a"))
+    .then(Array.from)
+    .then((es) => es.map((e) => e.getAttribute("href")))
+    .then((hrefs) =>
+      hrefs.find((href) =>
+        href.startsWith("https://www.espn.com/nfl/player/stats/_/id/")
+      )
+    )
+    .then((href) => {
+      if (!href) return;
+      const id = href.split("_/id/")[1].split("/")[0];
+      const playerId = `p_${id}`;
+      chrome.storage.sync.get([playerId], (result) => {
+        const innerHTML = Object.entries(result[playerId] || {})
+          .map(([post, timestamp]) => ({ post, timestamp }))
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .map((o) => o.post.split("_")[1])
+          .map(
+            (id) => `https://www.reddit.com/r/fantasyfootball/comments/${id}`
+          )
+          .map((href) => `<a href="${href}">hi</a>`)
+          .join("\n");
+        if (div.innerHTML !== innerHTML) div.innerHTML = innerHTML;
+      });
+    });
+}
 
 init();

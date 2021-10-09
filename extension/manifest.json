@@ -12,7 +12,7 @@
   "background": {"service_worker": "background.js"},
   "content_scripts": [
     {
-      "matches": ["https://www.reddit.com/r/fantasyfootball/**"],
+      "matches": ["https://www.reddit.com/r/fantasyfootball/**", "https://fantasy.espn.com/football/**"],
       "js": ["content_script.js"]
     }
   ],
