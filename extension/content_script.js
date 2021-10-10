@@ -9,12 +9,10 @@ function log(arg) {
 }
 
 function main() {
-  if (location.href.startsWith("https://www.reddit.com")) {
-    transform();
-  } else {
-    inject();
-  }
-  setTimeout(main, 100);
+  const f = location.href.startsWith("https://www.reddit.com")
+    ? transform
+    : inject;
+  f().then(() => setTimeout(main, 100));
 }
 
 const data = { posts: {}, players: {} };
@@ -51,7 +49,7 @@ function updateHidden(e, key) {
 }
 
 function updatePlayers(playersDiv, key, redditId) {
-  Promise.resolve(data.posts[key].players)
+  return Promise.resolve(data.posts[key].players)
     .then(Object.keys)
     .then((players) =>
       players.map((p) => {
@@ -80,7 +78,7 @@ function updatePlayers(playersDiv, key, redditId) {
 }
 
 function transform() {
-  Promise.resolve()
+  return Promise.resolve()
     .then(() => document.getElementsByClassName("sitetable"))
     .then(Array.from)
     .then((tables) =>
@@ -200,7 +198,7 @@ function getBoxDiv(key, playersDiv, redditId, title) {
 }
 
 function read(postTitle, redditId, key, playersDiv, e) {
-  Promise.resolve(data.players)
+  return Promise.resolve(data.players)
     .then(Object.values)
     .then((players) =>
       players.filter((p) => clean(postTitle).includes(clean(p.n)))
@@ -236,7 +234,6 @@ function seriallyUpdate(playerId, redditId, title) {
     promises.splice(0, 1, x.p)[0].then(() =>
       chrome.storage.sync.get([playerId], (result) => {
         const redditIds = result[playerId] || {};
-        const title = "TODO";
         redditIds[redditId] = {
           redditId,
           title,
@@ -300,14 +297,14 @@ function loadPlayers() {
 
 function inject() {
   const playerCard = document.getElementsByClassName("player-card-center")[0];
-  if (!playerCard) return;
+  if (!playerCard) return Promise.resolve();
   var div = playerCard.getElementsByClassName("extension_div")[0];
   if (!div) {
     div = document.createElement("pre");
     div.classList = ["extension_div"];
     playerCard.appendChild(div);
   }
-  Promise.resolve(playerCard.getElementsByTagName("a"))
+  return Promise.resolve(playerCard.getElementsByTagName("a"))
     .then(Array.from)
     .then((es) => es.map((e) => e.getAttribute("href")))
     .then((hrefs) =>
@@ -320,14 +317,14 @@ function inject() {
       const id = href.split("_/id/")[1].split("/")[0];
       const playerId = `p_${id}`;
       chrome.storage.sync.get([playerId], (result) => {
-        const innerHTML = Object.entries(result[playerId] || {})
-          .map(([post, timestamp]) => ({ post, timestamp }))
+        const innerHTML = Object.values(result[playerId] || {})
           .sort((a, b) => b.timestamp - a.timestamp)
-          .map((o) => o.post.split("_")[1])
           .map(
-            (id) => `https://www.reddit.com/r/fantasyfootball/comments/${id}`
+            ({ redditId, title, timestamp }) =>
+              `<a href="https://www.reddit.com/r/fantasyfootball/comments/${
+                redditId.split("_")[1]
+              }">${title}</a>`
           )
-          .map((href) => `<a href="${href}">hi</a>`)
           .join("\n");
         if (div.innerHTML !== innerHTML) div.innerHTML = innerHTML;
       });
