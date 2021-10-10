@@ -300,7 +300,7 @@ function inject() {
   if (!playerCard) return Promise.resolve();
   var div = playerCard.getElementsByClassName("extension_div")[0];
   if (!div) {
-    div = document.createElement("pre");
+    div = document.createElement("div");
     div.classList = ["extension_div"];
     playerCard.appendChild(div);
   }
@@ -321,11 +321,13 @@ function inject() {
           .sort((a, b) => b.timestamp - a.timestamp)
           .map(
             ({ redditId, title, timestamp }) =>
-              `<a href="https://www.reddit.com/r/fantasyfootball/comments/${
+              `<div style="padding: 10px"><div><div>${new Date(
+                timestamp
+              )}</div><a href="https://www.reddit.com/r/fantasyfootball/comments/${
                 redditId.split("_")[1]
-              }">${title}</a>`
+              }">${title}</a></div></div>`
           )
-          .join("\n");
+          .join("");
         if (div.innerHTML !== innerHTML) div.innerHTML = innerHTML;
       });
     });
