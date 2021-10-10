@@ -134,13 +134,15 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
+  const timestamp = e.getElementsByTagName("time")[0].title;
+
   const postTitle = e.querySelector("a.title").innerText;
-  boxdiv = getBoxDiv(key, playersDiv, redditId, postTitle);
+  boxdiv = getBoxDiv(key, playersDiv, redditId, postTitle, timestamp);
   e.appendChild(boxdiv);
 
   chrome.storage.sync.get([key], (result) => {
     if (result[key] === undefined) {
-      read(postTitle, redditId, key, playersDiv, e);
+      read(postTitle, redditId, key, playersDiv, e, timestamp);
     } else {
       data.posts[key] = result[key];
       updateHidden(e, key);
@@ -151,7 +153,7 @@ function transformPost(e, table) {
   return e;
 }
 
-function getBoxDiv(key, playersDiv, redditId, title) {
+function getBoxDiv(key, playersDiv, redditId, title, timestamp) {
   const boxdiv = document.createElement("div");
   const box = document.createElement("input");
   const boxplayers = document.createElement("span");
@@ -179,7 +181,7 @@ function getBoxDiv(key, playersDiv, redditId, title) {
                 redditIds[redditId] = {
                   redditId,
                   title,
-                  timestamp: new Date().getTime(),
+                  timestamp,
                 };
                 console.log(`saving ${playerId} to ${redditId}`);
                 chrome.storage.sync.set({
@@ -197,7 +199,7 @@ function getBoxDiv(key, playersDiv, redditId, title) {
   return boxdiv;
 }
 
-function read(postTitle, redditId, key, playersDiv, e) {
+function read(postTitle, redditId, key, playersDiv, e, timestamp) {
   return Promise.resolve(data.players)
     .then(Object.values)
     .then((players) =>
@@ -218,7 +220,9 @@ function read(postTitle, redditId, key, playersDiv, e) {
           .then((p) =>
             p
               .map((p) => `p_${p}`)
-              .map((playerId) => seriallyUpdate(playerId, redditId, postTitle))
+              .map((playerId) =>
+                seriallyUpdate(playerId, redditId, postTitle, timestamp)
+              )
           )
           .then((ps) => Promise.all(ps))
           .then(() => updatePlayers(playersDiv, key, redditId));
@@ -227,7 +231,7 @@ function read(postTitle, redditId, key, playersDiv, e) {
 }
 
 const promises = [Promise.resolve()];
-function seriallyUpdate(playerId, redditId, title) {
+function seriallyUpdate(playerId, redditId, title, timestamp) {
   const x = {};
   function helper(x, resolve) {
     if (x.p === undefined) return setTimeout(() => helper(x, resolve), 10);
@@ -237,7 +241,7 @@ function seriallyUpdate(playerId, redditId, title) {
         redditIds[redditId] = {
           redditId,
           title,
-          timestamp: new Date().getTime(),
+          timestamp,
         };
         chrome.storage.sync.set(
           {
