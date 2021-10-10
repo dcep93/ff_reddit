@@ -313,7 +313,7 @@ function inject() {
     .then((es) => es.map((e) => e.getAttribute("href")))
     .then((hrefs) =>
       hrefs.find((href) =>
-        href.startsWith("https://www.espn.com/nfl/player/stats/_/id/")
+        href?.startsWith("https://www.espn.com/nfl/player/stats/_/id/")
       )
     )
     .then((href) => {
