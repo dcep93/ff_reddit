@@ -322,7 +322,7 @@ function inject() {
       const playerId = `p_${id}`;
       chrome.storage.sync.get([playerId], (result) => {
         const innerHTML = Object.values(result[playerId] || {})
-          .sort((a, b) => b.timestamp - a.timestamp)
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
           .map(
             ({ redditId, title, timestamp }) =>
               `<div style="padding: 10px"><div><div>${new Date(
