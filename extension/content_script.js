@@ -112,7 +112,7 @@ function getBoxDiv(playersDiv, redditId, title, timestamp) {
   boxdiv.appendChild(box);
   boxdiv.appendChild(boxplayers);
   box.onkeyup = () =>
-    Promise.resolve(data.players)
+    Promise.resolve(data.fetched.playerBank)
       .then(Object.values)
       .then((players) =>
         players
@@ -144,7 +144,7 @@ function getBoxDiv(playersDiv, redditId, title, timestamp) {
 }
 
 function read(title, redditId, playersDiv, timestamp) {
-  return Promise.resolve(data.players)
+  return Promise.resolve(data.fetched.playerBank)
     .then(Object.values)
     .then((players) => players.filter((p) => clean(title).includes(clean(p.n))))
     .then((players) => {
@@ -200,7 +200,9 @@ function updatePlayers(playersDiv, redditId) {
       players.map((playerId) => {
         const d = document.createElement("span");
         d.style.paddingRight = "10px";
-        d.innerText = `${data.players[p].n}/${data.players[p].o.toFixed(2)}`;
+        d.innerText = `${
+          data.fetched.playerBank[playerId].n
+        }/${data.fetched.playerBank[p].o.toFixed(2)}`;
         d.title = Object.keys(data.players[playerId]);
         d.onclick = () => {
           console.log(`removing ${playerId} from ${redditId}`);
@@ -280,7 +282,7 @@ function loadPlayers() {
         ])
       )
       .then(Object.fromEntries)
-      .then((players) => (data.fetched = { players, timestamp }))
+      .then((playerBank) => (data.fetched = { playerBank, timestamp }))
       .then(saveData)
       .then(resolve);
   });
