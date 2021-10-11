@@ -39,8 +39,11 @@ function run() {
 function clean(str) {
   return str
     .toLowerCase()
-    .replaceAll(/\bcmc\b/g, "christian mccaffrey")
-    .replaceAll(/\./g, "");
+    .replaceAll(/\./g, "")
+    .replaceAll(/ jr\b/g, "")
+    .replaceAll(/ sr\b/g, "")
+    .replaceAll(/ i+\b/g, "")
+    .replaceAll(/\bcmc\b/g, "christian mccaffrey");
 }
 
 function updateHidden(e, key) {
@@ -283,7 +286,7 @@ function loadPlayers() {
               {
                 n: fullName,
                 id,
-                o: ownership.percentOwned,
+                o: ownership?.percentOwned,
               },
             ])
           )
