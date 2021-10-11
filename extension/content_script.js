@@ -202,7 +202,7 @@ function updatePlayers(playersDiv, redditId) {
         d.style.paddingRight = "10px";
         d.innerText = `${
           data.fetched.playerBank[playerId].n
-        }/${data.fetched.playerBank[p].o.toFixed(2)}`;
+        }/${data.fetched.playerBank[playerId].o.toFixed(2)}`;
         d.title = Object.keys(data.players[playerId]);
         d.onclick = () => {
           console.log(`removing ${playerId} from ${redditId}`);
@@ -288,4 +288,5 @@ function loadPlayers() {
   });
 }
 
-chrome.storage.local.clear(run);
+// chrome.storage.local.clear(run);
+run();
