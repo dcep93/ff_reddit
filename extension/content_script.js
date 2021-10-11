@@ -17,6 +17,7 @@ var data;
 
 function run() {
   chrome.storage.local.get(["data"], (result) => {
+    console.log(`loaded ${JSON.stringify(result).length} bytes`);
     data = result.data
       ? result.data
       : { posts: {}, players: {}, fetched: { timestamp: -1 } };
