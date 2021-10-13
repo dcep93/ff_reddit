@@ -207,7 +207,7 @@ function updatePlayers(playersDiv, redditId) {
         d.title = Object.keys(data.players[playerId]);
         d.onclick = () => {
           console.log(`removing ${playerId} from ${redditId}`);
-          delete data.posts[redditId].players[p];
+          delete data.posts[redditId].players[playerId];
           const redditIds = data.players[playerId];
           delete redditIds[redditId];
           updatePlayers(playersDiv, redditId);
