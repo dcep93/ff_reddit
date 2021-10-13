@@ -79,7 +79,7 @@ function transformPost(e, table) {
 
   const controls = document.createElement("span");
   controls.innerText = `${
-    e.getElementsByClassName("comments")[0].innerText
+    e.getElementsByClassName("comments")[0]?.innerText
   } - ${redditId}`;
   controls.onclick = () => {
     console.log(`toggling ${redditId} ${data.posts[redditId].hidden}`);
