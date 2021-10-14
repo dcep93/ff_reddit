@@ -112,7 +112,11 @@ function getBoxDiv(playersDiv, redditId, title, timestamp) {
   const boxplayers = document.createElement("span");
   boxdiv.appendChild(box);
   boxdiv.appendChild(boxplayers);
-  box.onkeyup = () =>
+  box.onkeyup = (e) => {
+    if (e.key === "Enter") {
+      boxplayers.children[0].click();
+      return;
+    }
     Promise.resolve(data.fetched.playerBank)
       .then(Object.values)
       .then((players) =>
@@ -124,6 +128,7 @@ function getBoxDiv(playersDiv, redditId, title, timestamp) {
             const d = document.createElement("div");
             d.innerText = `${p.o.toFixed(2)} ${p.n}`;
             d.onclick = () => {
+              console.log(`adding ${p.id} to ${redditId}`);
               boxplayers.replaceChildren();
               box.value = "";
               data.posts[redditId].players[p.id] = new Date().getTime();
@@ -141,6 +146,7 @@ function getBoxDiv(playersDiv, redditId, title, timestamp) {
           })
       )
       .then((playerDivs) => boxplayers.replaceChildren(...playerDivs));
+  };
   return boxdiv;
 }
 
