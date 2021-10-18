@@ -10,20 +10,19 @@ function main() {
   const f = location.href.startsWith("https://www.reddit.com")
     ? transform
     : inject;
-  f().then(() => setTimeout(main, 100));
-}
 
-var data;
-
-function run() {
   chrome.storage.local.get(["data"], (result) => {
-    console.log(`loaded ${JSON.stringify(result).length} bytes`);
+    if (!data) console.log(`loaded ${JSON.stringify(result).length} bytes`);
     data = result.data
       ? result.data
       : { posts: {}, players: {}, fetched: { timestamp: -1 } };
-    loadPlayers().then(main);
+    loadPlayers()
+      .then(f)
+      .then(() => setTimeout(main, 100));
   });
 }
+
+var data;
 
 function saveData(passThrough) {
   return new Promise((resolve, reject) =>
@@ -89,6 +88,7 @@ function transformPost(e, table) {
   };
   wrapper.appendChild(controls);
 
+  console.log(e);
   const timestamp = e.getElementsByTagName("time")[0].title;
 
   const postTitle = e.querySelector("a.title").innerText;
@@ -154,6 +154,9 @@ function read(title, redditId, playersDiv, timestamp) {
   return Promise.resolve(data.fetched.playerBank)
     .then(Object.values)
     .then((players) => players.filter((p) => clean(title).includes(clean(p.n))))
+    .then((players) => players.sort((a, b) => a.o - b.o).map((p) => [p.n, p]))
+    .then(Object.fromEntries)
+    .then(Object.values)
     .then((players) => {
       players.length &&
         console.log(`reading ${players.map((p) => p.n)} to ${redditId}`);
@@ -296,4 +299,4 @@ function loadPlayers() {
 }
 
 // chrome.storage.local.clear(run);
-run();
+main();
