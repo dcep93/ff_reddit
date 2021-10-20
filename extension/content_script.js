@@ -48,12 +48,15 @@ function transform() {
                   !e.classList.contains("morechildren")
               )
               .filter((e) => {
-                if (e.classList.contains("promoted")) {
-                  table.removeChild(e);
-                  return false;
-                } else {
-                  return true;
+                if (!e.classList.contains("promoted")) {
+                  const author = e.getElementsByClassName("author")[0];
+                  console.log(author, author.innerText);
+                  if (!["FFBot", "FantasyMod"].includes(author.innerText)) {
+                    return true;
+                  }
                 }
+                table.removeChild(e);
+                return false;
               })
               .map((e) => transformPost(e, table))
           )
@@ -212,7 +215,7 @@ function updatePlayers(playersDiv, redditId) {
         d.style.paddingRight = "10px";
         d.innerText = `${
           data.fetched.playerBank[playerId].n
-        }/${data.fetched.playerBank[playerId].o.toFixed(2)}`;
+        }/${data.fetched.playerBank[playerId].o?.toFixed(2)}`;
         d.title = Object.keys(data.players[playerId]);
         d.onclick = () => {
           console.log(`removing ${playerId} from ${redditId}`);
@@ -249,6 +252,7 @@ function inject() {
       if (!href) return;
       const playerId = href.split("_/id/")[1].split("/")[0];
       const innerHTML = Object.values(data.players[playerId] || {})
+        .filter(({ redditId, title, timestamp }) => redditId)
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .map(
           ({ redditId, title, timestamp }) =>
