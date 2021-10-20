@@ -50,8 +50,7 @@ function transform() {
               .filter((e) => {
                 if (!e.classList.contains("promoted")) {
                   const author = e.getElementsByClassName("author")[0];
-                  console.log(author, author.innerText);
-                  if (!["FFBot", "FantasyMod"].includes(author.innerText)) {
+                  if (!["FFBot", "FantasyMod"].includes(author?.innerText)) {
                     return true;
                   }
                 }
