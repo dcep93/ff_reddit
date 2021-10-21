@@ -261,8 +261,11 @@ function inject() {
               redditId.split("_")[1]
             }">${title}</a></div></div>`
         )
-        .join("");
-      if (div.innerHTML !== innerHTML) div.innerHTML = innerHTML;
+        .join("\n");
+      if (div.innerHTML !== innerHTML) {
+        console.log("updating");
+        div.innerHTML = innerHTML;
+      }
     });
 }
 
